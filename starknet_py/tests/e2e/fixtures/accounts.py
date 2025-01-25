@@ -9,7 +9,7 @@ from starknet_py.contract import Contract
 from starknet_py.hash.address import compute_address
 from starknet_py.net.account.account import Account
 from starknet_py.net.account.base_account import BaseAccount
-from starknet_py.net.client_models import PriceUnit, ResourceBounds
+from starknet_py.net.client_models import PriceUnit
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.http_client import HttpMethod, RpcHttpClient
 from starknet_py.net.models import StarknetChainId
@@ -17,6 +17,7 @@ from starknet_py.net.signer.key_pair import KeyPair
 from starknet_py.tests.e2e.fixtures.constants import (
     DEVNET_PRE_DEPLOYED_ACCOUNT_ADDRESS,
     DEVNET_PRE_DEPLOYED_ACCOUNT_PRIVATE_KEY,
+    MAX_RESOURCE_BOUNDS_L1,
 )
 from starknet_py.tests.e2e.utils import (
     AccountToBeDeployedDetails,
@@ -200,7 +201,7 @@ async def argent_account(
 
 @pytest_asyncio.fixture(scope="package")
 async def argent_account_v040(
-    argent_account_class_hash_v040,
+    argent_account_v040_class_hash,
     eth_fee_contract: Contract,
     strk_fee_contract: Contract,
     client,
@@ -214,7 +215,7 @@ async def argent_account_v040(
         1,
     ]
 
-    address, salt = _new_address(argent_account_class_hash_v040, constructor_calldata)
+    address, salt = _new_address(argent_account_v040_class_hash, constructor_calldata)
 
     await prepay_account(
         address=address,
@@ -224,14 +225,12 @@ async def argent_account_v040(
 
     deploy_result = await Account.deploy_account_v3(
         address=address,
-        class_hash=argent_account_class_hash_v040,
+        class_hash=argent_account_v040_class_hash,
         salt=salt,
         key_pair=key_pair,
         client=client,
         constructor_calldata=constructor_calldata,
-        l1_resource_bounds=ResourceBounds(
-            max_amount=int(1e5), max_price_per_unit=int(1e13)
-        ),
+        l1_resource_bounds=MAX_RESOURCE_BOUNDS_L1,
     )
     await deploy_result.wait_for_acceptance()
     return deploy_result.account

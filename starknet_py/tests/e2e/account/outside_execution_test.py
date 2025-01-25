@@ -5,11 +5,8 @@ import pytest
 from starknet_py.constants import ANY_CALLER, OutsideExecutionInterfaceID
 from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.account.account import BaseAccount
-from starknet_py.net.client_models import (
-    Call,
-    OutsideExecutionTimeBounds,
-    ResourceBounds,
-)
+from starknet_py.net.client_models import Call, OutsideExecutionTimeBounds
+from starknet_py.tests.e2e.fixtures.constants import MAX_RESOURCE_BOUNDS_L1
 from starknet_py.transaction_errors import TransactionRevertedError
 
 
@@ -18,12 +15,16 @@ async def test_argent_account_outside_execution_compatibility(
     argent_account: BaseAccount,
     argent_account_v040: BaseAccount,
 ):
-    for a, has_v1, has_v2 in [
+    for account, has_v1, has_v2 in [
         (argent_account, True, False),
         (argent_account_v040, True, True),
     ]:
-        assert await a.supports_interface(OutsideExecutionInterfaceID.V1) is has_v1
-        assert await a.supports_interface(OutsideExecutionInterfaceID.V2) is has_v2
+        assert (
+            await account.supports_interface(OutsideExecutionInterfaceID.V1) is has_v1
+        )
+        assert (
+            await account.supports_interface(OutsideExecutionInterfaceID.V2) is has_v2
+        )
 
 
 @pytest.mark.asyncio
@@ -51,9 +52,7 @@ async def test_account_outside_execution_any_caller(
 
     tx = await account.execute_v3(
         calls=[call],
-        l1_resource_bounds=ResourceBounds(
-            max_amount=int(1e5), max_price_per_unit=int(1e13)
-        ),
+        l1_resource_bounds=MAX_RESOURCE_BOUNDS_L1,
     )
     await account.client.wait_for_tx(tx.transaction_hash)
 
@@ -85,9 +84,7 @@ async def test_account_outside_execution_for_invalid_caller(
 
     tx = await account.execute_v3(
         calls=[call],
-        l1_resource_bounds=ResourceBounds(
-            max_amount=int(1e5), max_price_per_unit=int(1e13)
-        ),
+        l1_resource_bounds=MAX_RESOURCE_BOUNDS_L1,
     )
 
     with pytest.raises(TransactionRevertedError) as err:
@@ -119,9 +116,7 @@ async def test_account_outside_execution_for_impossible_time_bounds(
 
     tx = await account.execute_v3(
         calls=[call],
-        l1_resource_bounds=ResourceBounds(
-            max_amount=int(1e5), max_price_per_unit=int(1e13)
-        ),
+        l1_resource_bounds=MAX_RESOURCE_BOUNDS_L1,
     )
 
     with pytest.raises(TransactionRevertedError) as err:
@@ -152,9 +147,7 @@ async def test_account_outside_execution_by_itself_is_impossible(
 
     tx = await argent_account_v040.execute_v3(
         calls=[call],
-        l1_resource_bounds=ResourceBounds(
-            max_amount=int(1e5), max_price_per_unit=int(1e13)
-        ),
+        l1_resource_bounds=MAX_RESOURCE_BOUNDS_L1,
     )
 
     with pytest.raises(TransactionRevertedError) as err:
